@@ -1,0 +1,9 @@
+[
+  {"name": "AA 1-stop evening, Alaska Atmos award", "points": 17500, "taxes": 25.6, "currency": "bilt", "compare_cash": 352, "minutes": 476, "stops": 1, "risk": "low"},
+  {"name": "AA 1-stop evening, cash", "cash": 352, "minutes": 476, "stops": 1, "risk": "low"},
+  {"name": "Delta nonstop, Virgin Atlantic award", "points": 22000, "taxes": 5.6, "currency": "chase", "compare_cash": 310, "minutes": 364, "stops": 0, "risk": "low"},
+  {"name": "Delta nonstop, hidden-city cash", "cash": 310, "minutes": 364, "stops": 0, "risk": "medium"},
+  {"name": "United Saver 2 stops, United award", "points": 15000, "taxes": 5.6, "currency": "chase", "compare_cash": 340, "minutes": 867, "stops": 2, "risk": "low"},
+  {"name": "Nonstop from a farther airport, cash", "cash": 527, "minutes": 367, "stops": 0, "risk": "low"},
+  {"name": "Frontier GoWild, two nonstops + hotel", "cash": 32, "taxes": 115, "minutes": 1500, "stops": 1, "risk": "high"}
+]
