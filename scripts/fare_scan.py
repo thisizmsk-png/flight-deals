@@ -41,7 +41,8 @@ BEYOND = {
     "LAX": "SBA,SAN,PSP,SMF,SJC,OAK,FAT,LAS,PHX",
     "SFO": "SMF,RNO,MRY,EUG,MFR,ACV,FAT",
 }
-DEFAULT_BEYOND = "LAX,SFO,LAS,PHX,DEN,DFW,ORD,ATL,MIA,BOS,JFK,MSP,DTW,SLC,PDX,ANC"
+THROTTLED = 0  # consecutive searches that stayed rate-limited after retries
+DEFAULT_BEYOND ="LAX,SFO,LAS,PHX,DEN,DFW,ORD,ATL,MIA,BOS,JFK,MSP,DTW,SLC,PDX,ANC"
 
 def search(s, o, d, date, nonstop=False, tries=3):
     f = FlightSearchFilters(
@@ -50,13 +51,22 @@ def search(s, o, d, date, nonstop=False, tries=3):
                                        arrival_airport=[[Airport[d], 0]], travel_date=date)],
         stops=MaxStops.NON_STOP if nonstop else MaxStops.ANY,
         seat_type=SeatType.ECONOMY, sort_by=SortBy.CHEAPEST)
+    global THROTTLED
     for i in range(tries):
         try:
-            return s.search(f) or []
+            r = s.search(f) or []
+            THROTTLED = 0
+            return r
         except Exception as e:
             if "429" in str(e) and i < tries - 1:
+                print(f"  rate-limited by Google, waiting {30 * (i + 1)}s...", file=sys.stderr)
                 time.sleep(30 * (i + 1)); continue
             print(f"  ! {o}-{d} {date}: {str(e)[:70]}", file=sys.stderr)
+            if "429" in str(e):
+                THROTTLED += 1
+                if THROTTLED >= 2:
+                    sys.exit("Google is rate-limiting this IP (HTTP 429). Wait 30-60 minutes, "
+                             "then retry with fewer airports/dates, or search google.com/travel/flights by hand.")
             return []
 
 def fmt(fl):
@@ -80,7 +90,7 @@ def main():
     a = ap.parse_args()
     s = SearchFlights()
     origs, dates = a.orig.split(","), a.dates.split(",")
-    rows = []
+    rows, direct = [], {}
     if a.mode == "direct":
         for o in origs:
             for d in a.dest.split(","):
@@ -91,12 +101,24 @@ def main():
                     time.sleep(a.sleep)
     else:
         hub = a.dest
-        beyond = (a.beyond or BEYOND.get(hub, DEFAULT_BEYOND)).split(",")
+        beyond = [b for b in (a.beyond or BEYOND.get(hub, DEFAULT_BEYOND)).split(",")
+                  if b != hub and b in Airport.__members__]
+        n, total = 0, len(origs) * len(dates) * (len(beyond) + 1)
         for o in origs:
             for dt in dates:
+                n += 1
+                print(f"  [{n}/{total}] {o}-{hub} direct", file=sys.stderr)
+                d0 = search(s, o, hub, dt)
+                f0 = (d0[0][0] if isinstance(d0[0], tuple) else d0[0]) if d0 else None
+                if f0:
+                    direct[(o, dt)] = f0.price
+                    rows.append((f0.price, dt, f"{o}-{hub} (normal ticket)", *fmt(f0)[1:]))
+                time.sleep(a.sleep)
                 for b in beyond:
-                    if b in (o, hub) or b not in Airport.__members__:
+                    n += 1
+                    if b == o:
                         continue
+                    print(f"  [{n}/{total}] {o}-{b} via {hub}?", file=sys.stderr)
                     for x in search(s, o, b, dt)[:20]:
                         fl = x[0] if isinstance(x, tuple) else x
                         if len(fl.legs) >= 2 and fl.legs[0].arrival_airport.name == hub:
@@ -111,10 +133,23 @@ def main():
         sys.exit("No results. Google often returns empty (not an error) when it is rate-limiting: "
                  "wait 10-30 minutes and retry, or check the route on google.com/travel/flights.")
     rows.sort(key=lambda r: r[0])
-    print(f"{'$':>6}  {'date':10}  {'route':28} {'airline':14} {'dep':5} {'arr':5} dur")
+    if a.mode == "direct":
+        print(f"{'$':>6}  {'date':10}  {'route':28} {'airline':14} {'dep':5} {'arr':5} dur")
+        for r in rows:
+            print(f"{r[0]:>6.0f}  {r[1]:10}  {r[2][:28]:28} {r[3][:14]:14} {r[4]:5} {r[5]:5} {r[6]}")
+        return
+    print(f"{'$':>6}  {'date':10}  {'route':30} {'flight':10} {'dep':5} {'arr':5} vs normal")
     for r in rows:
-        print(f"{r[0]:>6.0f}  {r[1]:10}  {r[2][:28]:28} {r[3][:14]:14} {r[4]:5} {r[5]:5} {r[6]}")
-    if a.mode == "hidden" and rows:
+        o = r[2][:3]
+        base = direct.get((o, r[1]))
+        if "normal ticket" in r[2]:
+            note = "baseline"
+        elif base:
+            note = f"saves ${base - r[0]:.0f}" if r[0] < base else f"+${r[0] - base:.0f}, skip"
+        else:
+            note = "no baseline"
+        print(f"{r[0]:>6.0f}  {r[1]:10}  {r[2][:30]:30} {r[3][:10]:10} {r[4]:5} {r[5]:5} {note}")
+    if rows:
         print("\nHidden-city rules: one-way only, carry-on only (board early so it is not "
               "gate-checked), no frequent-flyer number, a rebooking can route you elsewhere.")
 

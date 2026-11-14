@@ -12,7 +12,15 @@ A skill for [Claude Code](https://docs.claude.com/en/docs/claude-code).
 [![Claude Code](https://img.shields.io/badge/for-Claude%20Code-d97757)](https://docs.claude.com/en/docs/claude-code)
 [![Never books for you](https://img.shields.io/badge/never-books%20for%20you-2b6cb0)](#safety)
 
+<img src="assets/demo.gif" alt="flight-deals demo: a live nonstop fare scan, a points vs cash verdict, then seven cash and award options ranked on one scale" width="900">
+
 </div>
+
+**Ask it things like:**
+- "Cheapest way home from Austin next Friday, I have Chase and Bilt points."
+- "Is 22,000 Virgin points for this Delta flight a good deal or should I pay $310?"
+- "I have a Frontier GoWild pass, can I get from Orlando to Chicago through a hub?"
+- "Which card should I transfer from, and is there a transfer bonus right now?"
 
 ---
 
@@ -75,7 +83,7 @@ The cheapest line is not automatically the answer: #1 needed a sold-out leg to o
 |---|---|
 | [`SKILL.md`](SKILL.md) | The six-phase playbook Claude follows |
 | [`scripts/points_vs_cash.py`](scripts/points_vs_cash.py) | Ranks options by effective cost, scores awards in cpp, gives a verdict. Point values in one dated table |
-| [`scripts/fare_scan.py`](scripts/fare_scan.py) | Google Flights fan-out (airports x dates) and hidden-city scan |
+| [`scripts/fare_scan.py`](scripts/fare_scan.py) | Google Flights fan-out (airports x dates) and hidden-city scan with a "saves $X vs a normal ticket" column. Shows progress, and stops early with a clear message when Google rate-limits |
 | [`references/techniques.md`](references/techniques.md) | 20 money-saving techniques ranked by savings vs risk, with the 2025-2026 rule changes (Southwest Companion Pass ending, United cardmember pricing, Chase Points Boost, GoWild windows) |
 | [`references/valuations.md`](references/valuations.md) | Cents-per-point valuations from four sources, the formula, decision rules, transfer partners and times |
 | [`references/tools.md`](references/tools.md) | Which tools are alive in 2026 (fli, seats.aero, PointsYeah, Kiwi, Skiplagged, ITA) and which are dead, plus working search URL patterns |
@@ -96,6 +104,15 @@ The cheapest line is not automatically the answer: #1 needed a sold-out leg to o
 It never books, pays, enters passwords, or transfers points. Transfers are irreversible, so it tells you to confirm award space right before you move points. Hidden-city and self-transfer tickets are flagged with their real risks. Scrapers are for personal, low-volume use.
 
 ---
+
+## Contributing
+
+Point values drift and award charts change every few months. The most useful pull requests:
+- Updated cents-per-point values in `scripts/points_vs_cash.py` (cite the source and date).
+- More hub to beyond-city lists in `fare_scan.py` for hidden-city scans.
+- A technique in `references/techniques.md` that saved you real money, with what it risks.
+
+If it saved you money on a flight, a star helps other people find it.
 
 ## License
 

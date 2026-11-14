@@ -34,4 +34,4 @@ Needs a logged-in browser. Each result card shows: points per program, taxes, wh
 - American (aa.com) ignores URL params; fill the form.
 
 ## Terms-of-service note
-Google/ITA/Skiplagged scrapers break those sites' terms. Keep it personal and low-volume. Google returns HTTP 429 after ~20-40 fast calls; wait ~10 min.
+Google/ITA/Skiplagged scrapers break those sites' terms. Keep it personal and low-volume. Google returns HTTP 429 after ~20-40 fast calls, and a throttled IP can stay blocked 30-60 min (seen 2026-11-13: worked, then 429 on every call minutes later). `fare_scan.py` exits after 2 searches in a row stay throttled, so keep scans small: a few airports and dates, not a full grid.
