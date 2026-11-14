@@ -42,6 +42,7 @@ BEYOND = {
     "SFO": "SMF,RNO,MRY,EUG,MFR,ACV,FAT",
 }
 THROTTLED = 0  # consecutive searches that stayed rate-limited after retries
+CALLS = [0, 0]  # [searches answered, searches with any result]; all empty = silent throttle
 DEFAULT_BEYOND ="LAX,SFO,LAS,PHX,DEN,DFW,ORD,ATL,MIA,BOS,JFK,MSP,DTW,SLC,PDX,ANC"
 
 def search(s, o, d, date, nonstop=False, tries=3):
@@ -56,6 +57,11 @@ def search(s, o, d, date, nonstop=False, tries=3):
         try:
             r = s.search(f) or []
             THROTTLED = 0
+            CALLS[0] += 1
+            CALLS[1] += bool(r)
+            if CALLS[0] >= 3 and not CALLS[1]:
+                sys.exit("Google returned nothing for the first 3 searches: that is its silent rate limit, "
+                         "not a lack of flights. Wait 30-60 minutes, or search google.com/travel/flights by hand.")
             return r
         except Exception as e:
             if "429" in str(e) and i < tries - 1:
